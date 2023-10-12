@@ -1,13 +1,16 @@
 package com.bsalcedo.orders_service.controllers;
 
 import com.bsalcedo.orders_service.model.dtos.OrderRequest;
+import com.bsalcedo.orders_service.model.dtos.OrderResponse;
 import com.bsalcedo.orders_service.services.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/api/order")
 @RequiredArgsConstructor
 public class OrderController {
 
@@ -20,4 +23,9 @@ public class OrderController {
         return "Order placed successfully";
     }
 
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<OrderResponse> getOrders() {
+        return this.orderService.getAllOrders();
+    }
 }
