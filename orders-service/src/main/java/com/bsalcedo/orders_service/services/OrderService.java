@@ -1,12 +1,16 @@
 package com.bsalcedo.orders_service.services;
 
+import com.bsalcedo.orders_service.events.OrderEvent;
 import com.bsalcedo.orders_service.model.dtos.*;
 import com.bsalcedo.orders_service.model.entities.Order;
 import com.bsalcedo.orders_service.model.entities.OrderItems;
+import com.bsalcedo.orders_service.model.enums.OrderStatus;
 import com.bsalcedo.orders_service.repositories.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import com.bsalcedo.orders_service.utils.JsonUtils;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,6 +20,7 @@ import java.util.UUID;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     public OrderResponse placeOrder(OrderRequest orderRequest) {
 
@@ -36,6 +41,12 @@ public class OrderService {
                     .toList());
 
             var savedOrder = this.orderRepository.save(order);
+
+            // Send message to order topic
+            this.kafkaTemplate.send("order-topic", JsonUtils.toJson(
+                    new OrderEvent(savedOrder.getOrderNumber(), savedOrder.getOrderItems().size(), OrderStatus.PLACED)
+            ));
+
             return mapToOrderResponse(savedOrder);
         } else {
             throw new IllegalArgumentException("Some of the products are not available in stock");
